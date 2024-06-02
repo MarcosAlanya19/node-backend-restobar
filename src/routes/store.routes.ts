@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import * as storeCtrl from '../controllers/store.controllers';
 
-export const router = Router();
+export const storeRouter = Router();
 
-router.get('/stores', storeCtrl.getStores);
-router.get('/stores/:id', storeCtrl.getStoreById);
-router.post('/stores', storeCtrl.createStore);
-router.put('/stores/:id', storeCtrl.updateStore);
-router.delete('/stores/:id', storeCtrl.deleteStore);
+storeRouter.get('/stores', storeCtrl.getStores);
+storeRouter.get('/stores/:id', storeCtrl.getStoreById);
+storeRouter.post('/stores', storeCtrl.createStore);
+storeRouter.put('/stores/:id', storeCtrl.updateStore);
+storeRouter.delete('/stores/:id', storeCtrl.deleteStore);

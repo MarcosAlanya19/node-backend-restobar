@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as storeService from '../services/store.service';
+import fileUpload from 'express-fileupload';
 
 export const getStores = async (req: Request, res: Response) => {
   try {
@@ -26,19 +27,27 @@ export const getStoreById = async (req: Request, res: Response) => {
 
 export const createStore = async (req: Request, res: Response) => {
   const storeData = req.body;
+  const file = req.files?.image;
+
+  if (!file || Array.isArray(file)) {
+    return res.status(400).send('No image file uploaded or multiple files uploaded');
+  }
+
   try {
-    const newStore = await storeService.createStore(storeData);
+    const imagePath = (file as fileUpload.UploadedFile).tempFilePath;
+    const newStore = await storeService.createStore(storeData, imagePath);
     res.status(201).json(newStore);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 };
 
-export const updateStore = async (req: Request, res: Response) => {
+export const updateStore = async (req: any, res: Response) => {
   const id = parseInt(req.params.id);
   const storeData = req.body;
+  const image = req.file;
   try {
-    await storeService.updateStore(id, storeData);
+    await storeService.updateStore(id, storeData, image);
     res.status(204).end();
   } catch (error: any) {
     res.status(500).json({ error: error.message });

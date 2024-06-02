@@ -1,13 +1,10 @@
-import dotenv from 'dotenv';
-import { Server } from './models/server';
+import express from 'express';
+import { storeRouter } from './routes/store.routes';
+import { userRouter } from './routes/user.routes';
 
-dotenv.config();
+const app = express();
 
-export const ServerConfig = {
-  port: process.env.PORT ?? '3000',
-  userPath: '/api',
-};
+app.use(storeRouter)
+app.use(userRouter)
 
-const server = new Server(ServerConfig);
-
-server.listen();
+app.listen(3000);
