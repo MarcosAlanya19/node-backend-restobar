@@ -5,6 +5,7 @@ import fileUpload from 'express-fileupload';
 export const getStores = async (req: Request, res: Response) => {
   try {
     const stores = await storeService.getStores();
+    console.log({ stores });
     res.json(stores);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

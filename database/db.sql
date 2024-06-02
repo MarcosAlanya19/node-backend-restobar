@@ -19,10 +19,10 @@ CREATE TABLE Store (
 CREATE TABLE Burger (
     ID SERIAL PRIMARY KEY,
     burger_name VARCHAR(100),
-	public_id VARCHAR(255),
+    public_id VARCHAR(255),
     secure_url VARCHAR(255),
     description VARCHAR(255),
     price DECIMAL(10, 2),
     store_id INT,
-    FOREIGN KEY (store_id) REFERENCES Store(ID)
+    FOREIGN KEY (store_id) REFERENCES Store(ID)
 );

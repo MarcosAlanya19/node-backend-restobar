@@ -26,6 +26,8 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   const userData = req.body;
+
+
   try {
     const newUser = await userService.createUser(userData);
     res.status(201).json(newUser);
