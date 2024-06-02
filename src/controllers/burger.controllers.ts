@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import * as burgerService from '../services/burger.service';
+import { IBurger } from '../types/burger.type';
+import fileUpload from 'express-fileupload';
 
 export const getBurgers = async (req: Request, res: Response) => {
   try {
@@ -25,9 +27,16 @@ export const getBurgerById = async (req: Request, res: Response) => {
 };
 
 export const createBurger = async (req: Request, res: Response) => {
-  const { burger_name, description, price, burger_img, store_id } = req.body;
+  const burgerData = req.body as IBurger;
+  const file = req.files?.image;
+
+  if (!file || Array.isArray(file)) {
+    return res.status(400).send('No image file uploaded or multiple files uploaded');
+  }
+
   try {
-    const newBurger = await burgerService.createBurger(burger_name, description, price, burger_img, store_id);
+    const imagePath = (file as fileUpload.UploadedFile).tempFilePath;
+    const newBurger = await burgerService.createBurger(burgerData, imagePath);
     res.status(201).json(newBurger);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -36,9 +45,16 @@ export const createBurger = async (req: Request, res: Response) => {
 
 export const updateBurger = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { burger_name, description, price, burger_img, store_id } = req.body;
+  const burgerData = req.body as IBurger;
+  const file = req.files?.image;
+
+  if (!file || Array.isArray(file)) {
+    return res.status(400).send('No image file uploaded or multiple files uploaded');
+  }
+
   try {
-    await burgerService.updateBurger(id, burger_name, description, price, burger_img, store_id);
+    const imagePath = (file as fileUpload.UploadedFile).tempFilePath;
+    await burgerService.updateBurger(id, burgerData, imagePath);
     res.status(204).end();
   } catch (error: any) {
     res.status(500).json({ error: error.message });

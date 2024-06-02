@@ -43,12 +43,18 @@ export const createStore = async (req: Request, res: Response) => {
   }
 };
 
-export const updateStore = async (req: any, res: Response) => {
+export const updateStore = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const storeData = req.body;
-  const image = req.file;
+  const file = req.files?.image;
+
+  if (!file || Array.isArray(file)) {
+    return res.status(400).send('No image file uploaded or multiple files uploaded');
+  }
+
   try {
-    await storeService.updateStore(id, storeData, image);
+    const imagePath = (file as fileUpload.UploadedFile).tempFilePath;
+    await storeService.updateStore(id, storeData, imagePath);
     res.status(204).end();
   } catch (error: any) {
     res.status(500).json({ error: error.message });
