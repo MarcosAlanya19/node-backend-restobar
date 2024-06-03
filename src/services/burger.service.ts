@@ -33,21 +33,28 @@ export async function createBurger(burgerData: IBurger, imagePath: string) {
   return rows[0];
 }
 
-export async function updateBurger(id: number, burgerData: IBurger, imagePath: string) {
+export async function updateBurger(id: number, burgerData: IBurger, imagePath?: string) {
   const { burger_name, description, price, store_id } = burgerData;
-  const { rows: currentRows } = await pool.query('SELECT public_id FROM Burger WHERE id = $1', [id]);
 
+  const { rows: currentRows } = await pool.query('SELECT public_id FROM Burger WHERE id = $1', [id]);
   const currentBurger = currentRows[0];
 
-  if (currentBurger.public_id) {
-    await deleteImg(currentBurger.public_id);
-  }
-
-  const result = await uploadImg(imagePath);
-  const imageUrl = {
-    public_id: result.public_id,
-    secure_url: result.secure_url,
+  let imageUrl = {
+    public_id: currentBurger.public_id,
+    secure_url: currentBurger.secure_url,
   };
+
+  if (imagePath) {
+    if (currentBurger.public_id) {
+      await deleteImg(currentBurger.public_id);
+    }
+
+    const result = await uploadImg(imagePath);
+    imageUrl = {
+      public_id: result.public_id,
+      secure_url: result.secure_url,
+    };
+  }
 
   const { rows } = await pool.query('UPDATE Burger SET burger_name = $1, description = $2, price = $3, store_id = $4, public_id = $5, secure_url = $6 WHERE id = $7 RETURNING *', [
     burger_name,

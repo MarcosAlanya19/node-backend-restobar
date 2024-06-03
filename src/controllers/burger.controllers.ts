@@ -45,17 +45,23 @@ export const createBurger = async (req: Request, res: Response) => {
 
 export const updateBurger = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
+
+  if (isNaN(id)) {
+    return res.status(400).send('Invalid store ID');
+  }
+
   const burgerData = req.body as IBurger;
   const file = req.files?.image;
 
-  if (!file || Array.isArray(file)) {
-    return res.status(400).send('No image file uploaded or multiple files uploaded');
-  }
-
   try {
-    const imagePath = (file as fileUpload.UploadedFile).tempFilePath;
-    await burgerService.updateBurger(id, burgerData, imagePath);
-    res.status(204).end();
+    if (file && !Array.isArray(file)) {
+      const imagePath = (file as fileUpload.UploadedFile).tempFilePath;
+      await burgerService.updateBurger(id, burgerData, imagePath);
+      res.status(204).end();
+    } else {
+      await burgerService.updateBurger(id, burgerData);
+      res.status(204).end();
+    }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

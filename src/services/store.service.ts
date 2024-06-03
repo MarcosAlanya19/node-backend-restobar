@@ -37,21 +37,28 @@ export const createStore = async (storeData: Store, imagePath: string) => {
   return rows[0];
 };
 
-export async function updateStore(id: number, storeData: Store, imagePath: string) {
+export async function updateStore(id: number, storeData: Store, imagePath?: string) {
   const { store_name, address, phone, opening_hour, closing_hour } = storeData;
 
-  const { rows: currentRows } = await pool.query('SELECT public_id FROM Store WHERE id = $1', [id]);
+  const { rows: currentRows } = await pool.query('SELECT public_id, secure_url FROM Store WHERE id = $1', [id]);
   const currentStore = currentRows[0];
 
-  if (currentStore.public_id) {
-    await deleteImg(currentStore.public_id);
-  }
-
-  const result = await uploadImg(imagePath);
-  const imageUrl = {
-    public_id: result.public_id,
-    secure_url: result.secure_url,
+  let imageUrl = {
+    public_id: currentStore.public_id,
+    secure_url: currentStore.secure_url,
   };
+
+  if (imagePath) {
+    if (currentStore.public_id) {
+      await deleteImg(currentStore.public_id);
+    }
+
+    const result = await uploadImg(imagePath);
+    imageUrl = {
+      public_id: result.public_id,
+      secure_url: result.secure_url,
+    };
+  }
 
   const { rows } = await pool.query(
     'UPDATE Store SET store_name = $1, address = $2, phone = $3, opening_hour = $4, closing_hour = $5, public_id = $6, secure_url = $7 WHERE id = $8 RETURNING *',
