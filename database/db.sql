@@ -12,6 +12,7 @@ CREATE TABLE Store (
     secure_url VARCHAR(255),
     address VARCHAR(255),
     phone VARCHAR(20),
+    description VARCHAR(255),
     opening_hour TIME,
     closing_hour TIME
 );
@@ -22,7 +23,14 @@ CREATE TABLE Burger (
     public_id VARCHAR(255),
     secure_url VARCHAR(255),
     description VARCHAR(255),
-    price DECIMAL(10, 2),
+    price DECIMAL(10, 2)
+);
+
+-- MANY TO MANY
+CREATE TABLE Store_Burger (
     store_id INT,
-    FOREIGN KEY (store_id) REFERENCES Store(ID)
+    burger_id INT,
+    PRIMARY KEY (store_id, burger_id),
+    FOREIGN KEY (store_id) REFERENCES Store(ID),
+    FOREIGN KEY (burger_id) REFERENCES Burger(ID)
 );

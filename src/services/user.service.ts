@@ -32,3 +32,8 @@ export const updateUser = async (id: number, userData: User) => {
 export const deleteUser = async (id: number) => {
   await pool.query('DELETE FROM User_Store WHERE id = $1', [id]);
 };
+
+export const loginUser = async (email: string, password: string) => {
+  const { rows } = await pool.query('SELECT * FROM User_Store WHERE email = $1 AND user_password = $2', [email, password]);
+  return rows[0];
+};

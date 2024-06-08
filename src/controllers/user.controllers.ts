@@ -27,7 +27,6 @@ export const getUserById = async (req: Request, res: Response) => {
 export const createUser = async (req: Request, res: Response) => {
   const userData = req.body;
 
-
   try {
     const newUser = await userService.createUser(userData);
     res.status(201).json(newUser);
@@ -52,6 +51,20 @@ export const deleteUser = async (req: Request, res: Response) => {
   try {
     await userService.deleteUser(id);
     res.status(204).end();
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const loginUser = async (req: Request, res: Response) => {
+  const { email, user_password } = req.body;
+  try {
+    const user = await userService.loginUser(email, user_password);
+    if (user) {
+      res.status(200).json({ message: 'Inicio de sesión correcto', user });
+    } else {
+      res.status(401).json({ error: 'Correo o contraseña no válidos' });
+    }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

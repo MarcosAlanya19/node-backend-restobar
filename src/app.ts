@@ -4,6 +4,7 @@ import { userRouter } from './routes/user.routes';
 import cors from 'cors';
 import fileUpload from 'express-fileupload';
 import { pool } from './database/dbConfig';
+import { burgerRouter } from './routes/burger.routes';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(
 );
 
 app.use('/api', storeRouter);
+app.use('/api', burgerRouter);
 app.use('/api', userRouter);
 
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

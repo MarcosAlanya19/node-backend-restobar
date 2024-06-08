@@ -3,7 +3,7 @@ export interface IBurger {
   description: string;
   price: string;
   burger_img: string;
-  store_id: string;
+  store_ids: string[];
 }
 
 interface IBurgerUpdate {
