@@ -1,8 +1,15 @@
 import { Router } from 'express';
-import { createOrderCtrl } from '../controllers/order.controlles';
+import { createOrderCtrl, deleteOrderCtrl, getOrderDetailsCtrl, updateOrderStatusCtrl } from '../controllers/order.controlles';
 
-const orderRouter = Router();
+export const orderRouter = Router();
 
 orderRouter.post('/orders', createOrderCtrl);
 
-export default orderRouter;
+// Ruta para obtener detalles de un pedido por su ID
+orderRouter.get('/orders/:id', getOrderDetailsCtrl);
+
+// Ruta para actualizar el estado de un pedido por su ID
+orderRouter.put('/orders/:id/status', updateOrderStatusCtrl);
+
+// Ruta para eliminar un pedido por su ID
+orderRouter.delete('/orders/:id', deleteOrderCtrl);

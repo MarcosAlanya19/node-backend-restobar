@@ -5,7 +5,7 @@ import cors from 'cors';
 import fileUpload from 'express-fileupload';
 import { pool } from './database/dbConfig';
 import { burgerRouter } from './routes/burger.routes';
-import orderRouter from './routes/order.routes';
+import { orderRouter} from './routes/order.routes';
 
 const app = express();
 

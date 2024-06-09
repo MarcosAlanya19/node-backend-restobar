@@ -1,44 +1,98 @@
 import { pool } from '../database/dbConfig';
+import { IOrder } from '../types/order.type';
 
-interface OrderItem {
-  item_id: number;
-  quantity: number;
-}
+export const orderService = {
+    createOrder: async (order: IOrder): Promise<number> => {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
 
-export interface Order {
-  user_id: number;
-  store_id: number;
-  items: OrderItem[];
-  status: 'pending' | 'in_process' | 'delivered';
-}
+            const { user_id, items } = order;
 
-export const createOrder = async (order: Order) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
+            // Insertar el pedido y obtener su ID generado automáticamente
+            const orderResult = await client.query('INSERT INTO "Order" (user_id) VALUES ($1) RETURNING id', [user_id]);
+            const orderId = orderResult.rows[0].id;
 
-    const { user_id, store_id, status, items } = order;
+            // Insertar los elementos del pedido en la tabla OrderItem
+            const orderItemsQuery = `
+                INSERT INTO OrderItem (order_id, item_id, quantity)
+                VALUES ${items.map((_, index) => `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`).join(', ')}
+            `;
 
-    const orderResult = await client.query('INSERT INTO "Order" (user_id, store_id, status) VALUES ($1, $2, $3) RETURNING *', [user_id, store_id, status]);
+            const orderItemsValues = items.flatMap(({ item_id, quantity }) => [orderId, item_id, quantity]);
+            await client.query(orderItemsQuery, orderItemsValues);
 
-    const newOrder = orderResult.rows[0];
+            await client.query('COMMIT');
 
-    const orderItemsQuery = `
-            INSERT INTO "OrderItem" (order_id, item_id, quantity)
-            VALUES ${items.map((_, index) => `($1, $${index * 2 + 2}, $${index * 2 + 3})`).join(', ')}
-        `;
+            return orderId; // Devolver el ID del pedido creado
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    },
 
-    const orderItemsValues = items.flatMap(({ item_id, quantity }) => [newOrder.id, item_id, quantity]);
+    getOrderDetails: async (orderId: number): Promise<IOrder> => {
+        const client = await pool.connect();
+        try {
+            const orderQuery = `
+                SELECT * FROM "Order" WHERE id = $1;
+            `;
+            const orderResult = await client.query(orderQuery, [orderId]);
+            const order = orderResult.rows[0];
 
-    await client.query(orderItemsQuery, [newOrder.id, ...orderItemsValues]);
+            const orderItemsQuery = `
+                SELECT * FROM OrderItem WHERE order_id = $1;
+            `;
+            const orderItemsResult = await client.query(orderItemsQuery, [orderId]);
+            const items = orderItemsResult.rows;
 
-    await client.query('COMMIT');
+            return { ...order, items };
+        } catch (error) {
+            throw error;
+        } finally {
+            client.release();
+        }
+    },
 
-    return newOrder;
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
+    updateOrderStatus: async (orderId: number, newStatus: string): Promise<void> => {
+        const client = await pool.connect();
+        try {
+            const updateQuery = `
+                UPDATE "Order" SET status = $1 WHERE id = $2;
+            `;
+            await client.query(updateQuery, [newStatus, orderId]);
+        } catch (error) {
+            throw error;
+        } finally {
+            client.release();
+        }
+    },
+
+    deleteOrder: async (orderId: number): Promise<void> => {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            // Eliminar elementos del pedido
+            const deleteItemsQuery = `
+                DELETE FROM OrderItem WHERE order_id = $1;
+            `;
+            await client.query(deleteItemsQuery, [orderId]);
+
+            // Eliminar el pedido
+            const deleteOrderQuery = `
+                DELETE FROM "Order" WHERE id = $1;
+            `;
+            await client.query(deleteOrderQuery, [orderId]);
+
+            await client.query('COMMIT');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
 };

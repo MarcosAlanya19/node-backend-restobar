@@ -42,15 +42,14 @@ CREATE TABLE StoreMenuItem (
 
 
 CREATE TYPE OrderStatus AS ENUM ('pending', 'in_process', 'delivered');
-
 CREATE TABLE "Order" (
     ID SERIAL PRIMARY KEY,
     user_id INT,
-    store_id INT,
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status OrderStatus DEFAULT 'pending',
+    assigned_store_id INT,
     FOREIGN KEY (user_id) REFERENCES User_Store(ID),
-    FOREIGN KEY (store_id) REFERENCES Store(ID)
+    FOREIGN KEY (assigned_store_id) REFERENCES Store(ID)
 );
 
 CREATE TABLE OrderItem (
