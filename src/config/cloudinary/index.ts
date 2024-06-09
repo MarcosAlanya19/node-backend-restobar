@@ -11,8 +11,10 @@ export async function uploadImg(filePath: string): Promise<any> {
   try {
     return await cloudinary.uploader.upload(filePath, {
       folder: 'replit',
+      quality: "auto"
     });
   } catch (error) {
+    console.log({error})
     console.error('Error uploading image to Cloudinary:', error);
     throw new Error('Failed to upload image to Cloudinary');
   }

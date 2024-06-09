@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { deleteImg, uploadImg } from '../config/cloudinary';
 import { pool } from '../database/dbConfig';
 import { IBurger } from '../types/burger.type';
@@ -8,9 +9,9 @@ export const getBurgers = async () => {
       b.*,
       COALESCE(json_agg(json_build_object('id', s.id, 'name', s.store_name)) FILTER (WHERE s.id IS NOT NULL), '[]') as stores
     FROM
-      Burger b
+      MenuItem b
     LEFT JOIN
-      Store_Burger sb ON b.id = sb.burger_id
+      StoreMenuItem sb ON b.id = sb.item_id
     LEFT JOIN
       Store s ON sb.store_id = s.id
     GROUP BY
@@ -20,23 +21,31 @@ export const getBurgers = async () => {
 };
 
 export const getBurgerById = async (id: number) => {
-  const { rows } = await pool.query('SELECT * FROM Burger WHERE id = $1', [id]);
+  const { rows } = await pool.query('SELECT * FROM MenuItem WHERE id = $1', [id]);
   return rows;
 };
 
+async function optimizeImage(imagePath: string): Promise<string> {
+  await sharp(imagePath).resize({ width: 1000 }).jpeg({ quality: 80 }).toFile('optimizedImage.jpg');
+
+  return 'optimizedImage.jpg';
+}
+
 export async function createBurger(burgerData: IBurger, imagePath: string) {
-  const { burger_name, description, price, store_ids } = burgerData;
+  const { item_name, description, price, store_ids } = burgerData;
 
   const storeIdsArray = typeof store_ids === 'string' ? store_ids.split(',').map((id) => id.trim()) : store_ids;
 
-  const result = await uploadImg(imagePath);
+  const optimizedImagePath = await optimizeImage(imagePath);
+
+  const result = await uploadImg(optimizedImagePath);
   const imageUrl = {
     public_id: result.public_id,
     secure_url: result.secure_url,
   };
 
-  const { rows } = await pool.query('INSERT INTO Burger(burger_name, public_id, secure_url, description, price) VALUES($1, $2, $3, $4, $5) RETURNING *', [
-    burger_name,
+  const { rows } = await pool.query('INSERT INTO MenuItem(item_name, public_id, secure_url, description, price) VALUES($1, $2, $3, $4, $5) RETURNING *', [
+    item_name,
     imageUrl.public_id,
     imageUrl.secure_url,
     description,
@@ -47,18 +56,18 @@ export async function createBurger(burgerData: IBurger, imagePath: string) {
 
   if (storeIdsArray && storeIdsArray.length > 0) {
     const storeBurgerValues = storeIdsArray.map((store_id: number) => `(${newBurger.id}, ${store_id})`).join(', ');
-    await pool.query(`INSERT INTO Store_Burger (burger_id, store_id) VALUES ${storeBurgerValues}`);
+    await pool.query(`INSERT INTO StoreMenuItem (item_id, store_id) VALUES ${storeBurgerValues}`);
   }
 
   return newBurger;
 }
 
 export async function updateBurger(id: number, burgerData: IBurger, imagePath?: string) {
-  const { burger_name, description, price, store_ids } = burgerData;
+  const { item_name, description, price, store_ids, type } = burgerData;
 
   const storeIdsArray = typeof store_ids === 'string' ? store_ids.split(',').map((id) => id.trim()) : store_ids;
 
-  const { rows: currentRows } = await pool.query('SELECT public_id FROM Burger WHERE id = $1', [id]);
+  const { rows: currentRows } = await pool.query('SELECT public_id, type FROM MenuItem WHERE id = $1', [id]);
   const currentBurger = currentRows[0];
 
   let imageUrl = {
@@ -66,57 +75,49 @@ export async function updateBurger(id: number, burgerData: IBurger, imagePath?: 
     secure_url: currentBurger.secure_url,
   };
 
-  // Verificar si se proporciona una nueva imagen
   if (imagePath) {
-    // Eliminar la imagen actual si existe
     if (currentBurger.public_id) {
       await deleteImg(currentBurger.public_id);
     }
 
-    // Subir la nueva imagen
-    const result = await uploadImg(imagePath);
+    // Optimizar la imagen antes de subirla
+    const optimizedImagePath = await optimizeImage(imagePath);
+
+    const result = await uploadImg(optimizedImagePath);
     imageUrl = {
       public_id: result.public_id,
       secure_url: result.secure_url,
     };
   }
 
-  const { rows } = await pool.query('UPDATE Burger SET burger_name = $1, description = $2, price = $3, public_id = $4, secure_url = $5 WHERE id = $6 RETURNING *', [
-    burger_name,
+  // Si no se proporciona una nueva imagen, mantener la imagen existente
+  const updatedImageUrl = imagePath ? imageUrl : {
+    public_id: currentBurger.public_id,
+    secure_url: currentBurger.secure_url,
+  };
+
+  const { rows } = await pool.query('UPDATE MenuItem SET item_name = $1, description = $2, price = $3, public_id = $4, secure_url = $5, type = $6 WHERE id = $7 RETURNING *', [
+    item_name,
     description,
     price,
-    imageUrl.public_id,
-    imageUrl.secure_url,
+    updatedImageUrl.public_id,
+    updatedImageUrl.secure_url,
+    type,
     id,
   ]);
 
-  const updatedBurger = rows[0];
-
-  if (storeIdsArray && storeIdsArray.length > 0) {
-    // Eliminar las asociaciones antiguas
-    await pool.query('DELETE FROM Store_Burger WHERE burger_id = $1', [id]);
-
-    // Insertar nuevas asociaciones
-    const storeBurgerValues = storeIdsArray.map((store_id: number) => `(${id}, ${store_id})`).join(', ');
-    await pool.query(`INSERT INTO Store_Burger (burger_id, store_id) VALUES ${storeBurgerValues}`);
-  }
-
-  return updatedBurger;
+  return rows[0];
 }
 
 export async function deleteBurger(id: number): Promise<void> {
-  // Elimina las relaciones en la tabla Store_Burger
-  await pool.query('DELETE FROM Store_Burger WHERE burger_id = $1', [id]);
+  await pool.query('DELETE FROM StoreMenuItem WHERE item_id = $1', [id]);
 
-  // Recupera el public_id de la imagen asociada a la hamburguesa si existe
-  const { rows } = await pool.query('SELECT public_id FROM Burger WHERE id = $1', [id]);
+  const { rows } = await pool.query('SELECT public_id FROM MenuItem WHERE id = $1', [id]);
   const currentBurger = rows[0];
 
-  // Verifica si hay un public_id válido y elimina la imagen de Cloudinary si existe
   if (currentBurger && currentBurger.public_id) {
     await deleteImg(currentBurger.public_id);
   }
 
-  // Elimina la hamburguesa de la base de datos
-  await pool.query('DELETE FROM Burger WHERE id = $1', [id]);
+  await pool.query('DELETE FROM MenuItem WHERE id = $1', [id]);
 }

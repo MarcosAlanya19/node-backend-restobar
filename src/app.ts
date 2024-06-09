@@ -5,6 +5,7 @@ import cors from 'cors';
 import fileUpload from 'express-fileupload';
 import { pool } from './database/dbConfig';
 import { burgerRouter } from './routes/burger.routes';
+import orderRouter from './routes/order.routes';
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(
 app.use('/api', storeRouter);
 app.use('/api', burgerRouter);
 app.use('/api', userRouter);
+app.use('/api', orderRouter);
 
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
