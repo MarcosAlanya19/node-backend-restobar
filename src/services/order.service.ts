@@ -49,7 +49,7 @@ export const orderService = {
         WHERE oi.order_id = $1;
       `;
       const orderItemsResult = await client.query(orderItemsQuery, [orderId]);
-      const items: IOrderItem[] = orderItemsResult.rows.map((row: any) => ({
+      const items: any = orderItemsResult.rows.map((row: any) => ({
         id: row.id,
         item_name: row.item_name,
         description: row.description,
@@ -70,20 +70,23 @@ export const orderService = {
     try {
       await client.query('BEGIN');
 
-      let updateQuery = `
-              UPDATE "Order" SET status = $1
-          `;
-      const params = [newStatus];
+      // Verificar si ya hay una tienda asignada
+      const existingOrder = await client.query('SELECT assigned_store_id FROM "Order" WHERE id = $1', [orderId]);
+      const currentStoreId = existingOrder.rows[0]?.assigned_store_id;
 
-      // Agregar la asignación de tienda si se proporciona el nuevo ID de tienda
-      if (newStoreId !== undefined) {
-        updateQuery += `, store_id = $2`;
-        params.push(newStoreId);
+      // Verificar si se está intentando asignar una nueva tienda
+      if (newStoreId !== undefined && newStoreId !== currentStoreId) {
+        // Si ya hay una tienda asignada, lanzar un error
+        if (currentStoreId !== null) {
+          throw new Error('Ya hay una tienda asignada para este pedido.');
+        }
+
+        // Actualizar el estado del pedido y asignar la nueva tienda
+        await client.query('UPDATE "Order" SET status = $1, assigned_store_id = $2 WHERE id = $3', [newStatus, newStoreId, orderId]);
+      } else {
+        // Si no se proporciona un nuevo ID de tienda o el ID de tienda es el mismo, actualizar solo el estado del pedido
+        await client.query('UPDATE "Order" SET status = $1 WHERE id = $2', [newStatus, orderId]);
       }
-
-      updateQuery += ` WHERE id = $${params.length + 1};`;
-
-      await client.query(updateQuery, params.concat([orderId]));
 
       await client.query('COMMIT');
     } catch (error) {

@@ -27,7 +27,24 @@ export const orderController = {
     try {
       const orderId = parseInt(req.params.orderId, 10);
       const { newStatus, newStoreId } = req.body;
-      await orderService.updateOrderStatus(orderId, newStatus, newStoreId);
+
+      // Verificar si newStoreId es un string y convertirlo a número si es necesario
+      const storeId = typeof newStoreId === 'string' ? parseInt(newStoreId, 10) : newStoreId;
+
+      // Verificar si newStatus es una cadena válida (opcional, dependiendo de tu lógica)
+      const validStatuses = ['pending', 'in_process', 'delivered'];
+      if (!validStatuses.includes(newStatus)) {
+        throw new Error('El estado proporcionado no es válido');
+      }
+
+      // Verificar si orderId es un número válido
+      if (isNaN(orderId)) {
+        throw new Error('El ID del pedido no es válido');
+      }
+
+      // Llamar a la función updateOrderStatus con los datos validados
+      await orderService.updateOrderStatus(orderId, newStatus, storeId);
+
       res.status(200).json({ message: 'Estado del pedido actualizado exitosamente' });
     } catch (error) {
       console.error('Error al actualizar el estado del pedido:', error);
