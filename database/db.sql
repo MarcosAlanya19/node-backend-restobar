@@ -1,8 +1,10 @@
+CREATE TYPE UserRole AS ENUM ('customer', 'administrator');
 CREATE TABLE User_Store (
     ID SERIAL PRIMARY KEY,
     user_name VARCHAR(50),
     user_password VARCHAR(255),
     email VARCHAR(100)
+    role UserRole DEFAULT 'customer'
 );
 
 CREATE TABLE Store (
@@ -40,7 +42,8 @@ CREATE TABLE StoreMenuItem (
 
 
 CREATE TYPE OrderStatus AS ENUM ('pending', 'in_process', 'delivered');
-CREATE TABLE Order (
+
+CREATE TABLE "Order" (
     ID SERIAL PRIMARY KEY,
     user_id INT,
     store_id INT,
@@ -55,6 +58,6 @@ CREATE TABLE OrderItem (
     item_id INT,
     quantity INT,
     PRIMARY KEY (order_id, item_id),
-    FOREIGN KEY (order_id) REFERENCES Order(ID),
+    FOREIGN KEY (order_id) REFERENCES "Order"(ID),
     FOREIGN KEY (item_id) REFERENCES MenuItem(ID)
 );

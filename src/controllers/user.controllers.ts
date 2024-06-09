@@ -26,12 +26,21 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   const userData = req.body;
+  const { user_name, user_password, email } = userData;
 
   try {
-    const newUser = await userService.createUser(userData);
-    res.status(201).json(newUser);
+    const emailExists = await userService.checkEmailExists(email);
+    if (emailExists) {
+      res.status(400).json({ error: 'El correo electrónico ya está en uso' });
+      return;
+    }
+
+    const userCreated = await userService.createUser(userData);
+    if (userCreated) {
+      res.status(201).json({ mensaje: 'Usuario creado exitosamente' });
+    }
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
