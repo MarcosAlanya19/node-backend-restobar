@@ -127,31 +127,46 @@ export const orderService = {
     const client = await pool.connect();
     try {
       const ordersQuery = `
-            SELECT
-    o.id as order_id,
-    o.status,
-    o.assigned_store_id,
-    o.order_date,
-    us.user_name as user_name,
-    json_agg(json_build_object(
-        'id', mi.id,
-        'item_name', mi.item_name,
-        'description', mi.description,
-        'price', mi.price,
-        'quantity', oi.quantity
-    )) AS items
-FROM "Order" o
-LEFT JOIN OrderItem oi ON o.id = oi.order_id
-LEFT JOIN MenuItem mi ON oi.item_id = mi.id
-LEFT JOIN User_Store us ON o.user_id = us.id
-GROUP BY o.id, us.user_name;
-        `;
+        SELECT
+          o.id as order_id,
+          o.status,
+          o.assigned_store_id,
+          o.order_date,
+          json_build_object(
+            'user_name', us.user_name,
+            'email', us.email,
+            'phone_number', us.phone_number,
+            'address', us.address
+          ) as user,
+          json_build_object(
+            'id', st.id,
+            'store_name', st.store_name,
+            'address', st.address,
+            'phone', st.phone,
+            'description', st.description,
+            'opening_hour', st.opening_hour,
+            'closing_hour', st.closing_hour
+          ) as store,
+          json_agg(json_build_object(
+            'id', mi.id,
+            'item_name', mi.item_name,
+            'description', mi.description,
+            'price', mi.price,
+            'quantity', oi.quantity
+          )) AS items
+        FROM "Order" o
+        LEFT JOIN OrderItem oi ON o.id = oi.order_id
+        LEFT JOIN MenuItem mi ON oi.item_id = mi.id
+        LEFT JOIN User_Store us ON o.user_id = us.id
+        LEFT JOIN Store st ON o.assigned_store_id = st.id
+        GROUP BY o.id, us.user_name, us.email, us.phone_number, us.address, st.id, st.store_name, st.address, st.phone, st.description, st.opening_hour, st.closing_hour;
+      `;
       const result = await client.query(ordersQuery);
 
       // Mapear los resultados a un array de objetos de pedido
       const orders: IOrder[] = result.rows.map((row: any) => {
-        const { items, ...orderData } = row;
-        return { ...orderData, items };
+        const { items, user, store, ...orderData } = row;
+        return { ...orderData, user, store, items };
       });
 
       return orders;

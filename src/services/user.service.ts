@@ -1,12 +1,5 @@
 import { pool } from '../database/dbConfig';
-
-interface User {
-  id: number;
-  user_name: string;
-  user_password: string;
-  email: string;
-  role: 'customer' | 'administrator';
-}
+import { User } from '../types/user.type';
 
 export const getUsers = async () => {
   const { rows } = await pool.query('SELECT * FROM User_Store');
@@ -24,21 +17,30 @@ export const checkEmailExists = async (email: string) => {
 };
 
 export const createUser = async (userData: User) => {
-  const { user_name, user_password, email, role = 'customer' } = userData;
-  const { rows } = await pool.query('INSERT INTO User_Store(user_name, user_password, email, role) VALUES($1, $2, $3, $4) RETURNING *', [user_name, user_password, email, role]);
-  return rows[0];
-};
-
-export const updateUser = async (id: number, userData: User) => {
-  const { user_name, user_password, email, role } = userData;
-  const { rows } = await pool.query('UPDATE User_Store SET user_name = $1, user_password = $2, email = $3, role = $4 WHERE id = $5 RETURNING *', [
+  const { user_name, user_password, email, role = 'customer', address, phone_number } = userData;
+  const { rows } = await pool.query('INSERT INTO User_Store(user_name, user_password, email, role, address, phone_number) VALUES($1, $2, $3, $4) RETURNING *', [
     user_name,
     user_password,
     email,
     role,
+    address,
+    phone_number,
+  ]);
+  return rows[0];
+};
+
+export const updateUser = async (id: number, userData: User) => {
+  const { user_name, user_password, email, role, address, phone_number } = userData;
+  const { rows } = await pool.query('UPDATE User_Store SET user_name = $1, user_password = $2, email = $3, role = $4, address = $5, phone_number = $6 WHERE id = $7 RETURNING *', [
+    user_name,
+    user_password,
+    email,
+    role,
+    address,
+    phone_number,
     id,
   ]);
-  return rows;
+  return rows[0];
 };
 
 export const deleteUser = async (id: number) => {

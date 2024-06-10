@@ -4,6 +4,8 @@ CREATE TABLE User_Store (
     user_name VARCHAR(50),
     user_password VARCHAR(255),
     email VARCHAR(100)
+    phone_number VARCHAR(20),
+    address VARCHAR(255);
     role UserRole DEFAULT 'customer'
 );
 

@@ -67,7 +67,7 @@ export async function updateBurger(id: number, burgerData: IBurger, imagePath?: 
 
   const storeIdsArray = typeof store_ids === 'string' ? store_ids.split(',').map((id) => id.trim()) : store_ids;
 
-  const { rows: currentRows } = await pool.query('SELECT public_id, type FROM MenuItem WHERE id = $1', [id]);
+  const { rows: currentRows } = await pool.query('SELECT public_id, secure_url, type FROM MenuItem WHERE id = $1', [id]);
   const currentBurger = currentRows[0];
 
   let imageUrl = {
@@ -75,12 +75,11 @@ export async function updateBurger(id: number, burgerData: IBurger, imagePath?: 
     secure_url: currentBurger.secure_url,
   };
 
-  if (imagePath) {
+  if (imagePath && imagePath.trim() !== '') {
     if (currentBurger.public_id) {
       await deleteImg(currentBurger.public_id);
     }
 
-    // Optimizar la imagen antes de subirla
     const optimizedImagePath = await optimizeImage(imagePath);
 
     const result = await uploadImg(optimizedImagePath);
@@ -91,24 +90,23 @@ export async function updateBurger(id: number, burgerData: IBurger, imagePath?: 
   }
 
   // Si no se proporciona una nueva imagen, mantener la imagen existente
-  const updatedImageUrl = imagePath ? imageUrl : {
-    public_id: currentBurger.public_id,
-    secure_url: currentBurger.secure_url,
-  };
+  const updatedImageUrl = imageUrl;
 
-  const { rows } = await pool.query('UPDATE MenuItem SET item_name = $1, description = $2, price = $3, public_id = $4, secure_url = $5, type = $6 WHERE id = $7 RETURNING *', [
-    item_name,
-    description,
-    price,
-    updatedImageUrl.public_id,
-    updatedImageUrl.secure_url,
-    type,
-    id,
-  ]);
+  const { rows } = await pool.query(
+    'UPDATE MenuItem SET item_name = $1, description = $2, price = $3, public_id = $4, secure_url = $5, type = $6 WHERE id = $7 RETURNING *',
+    [
+      item_name,
+      description,
+      price,
+      updatedImageUrl.public_id,
+      updatedImageUrl.secure_url,
+      type,
+      id,
+    ]
+  );
 
   return rows[0];
 }
-
 export async function deleteBurger(id: number): Promise<void> {
   await pool.query('DELETE FROM StoreMenuItem WHERE item_id = $1', [id]);
 
