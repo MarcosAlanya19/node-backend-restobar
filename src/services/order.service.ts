@@ -82,7 +82,7 @@ export const orderService = {
 
         await client.query('UPDATE "Order" SET status = $1, assigned_store_id = $2 WHERE id = $3', [newStatus, newStoreId, orderId]);
       } else {
-        await client.query('UPDATE "Order" SET status = $1, assigned_store_id = NULL WHERE id = $2', [newStatus, orderId]);
+        await client.query('UPDATE "Order" SET status = $1, assigned_store_id = $2 WHERE id = $3', [newStatus,newStoreId,  orderId]);
       }
 
       await client.query('COMMIT');

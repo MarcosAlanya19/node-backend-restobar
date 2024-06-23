@@ -32,7 +32,7 @@ async function optimizeImage(imagePath: string): Promise<string> {
 }
 
 export async function createBurger(burgerData: IBurger, imagePath: string) {
-  const { item_name, description, price, store_ids } = burgerData;
+  const { item_name, description, price, store_ids, type } = burgerData;
 
   const storeIdsArray = typeof store_ids === 'string' ? store_ids.split(',').map((id) => id.trim()) : store_ids;
 
@@ -44,12 +44,13 @@ export async function createBurger(burgerData: IBurger, imagePath: string) {
     secure_url: result.secure_url,
   };
 
-  const { rows } = await pool.query('INSERT INTO MenuItem(item_name, public_id, secure_url, description, price) VALUES($1, $2, $3, $4, $5) RETURNING *', [
+  const { rows } = await pool.query('INSERT INTO MenuItem(item_name, public_id, secure_url, description, price, type) VALUES($1, $2, $3, $4, $5, $6) RETURNING *', [
     item_name,
     imageUrl.public_id,
     imageUrl.secure_url,
     description,
     price,
+    type,
   ]);
 
   const newBurger = rows[0];
@@ -91,18 +92,15 @@ export async function updateBurger(id: number, burgerData: IBurger, imagePath?: 
 
   const updatedImageUrl = imageUrl;
 
-  const { rows } = await pool.query(
-    'UPDATE MenuItem SET item_name = $1, description = $2, price = $3, public_id = $4, secure_url = $5, type = $6 WHERE id = $7 RETURNING *',
-    [
-      item_name,
-      description,
-      price,
-      updatedImageUrl.public_id,
-      updatedImageUrl.secure_url,
-      type,
-      id,
-    ]
-  );
+  const { rows } = await pool.query('UPDATE MenuItem SET item_name = $1, description = $2, price = $3, public_id = $4, secure_url = $5, type = $6 WHERE id = $7 RETURNING *', [
+    item_name,
+    description,
+    price,
+    updatedImageUrl.public_id,
+    updatedImageUrl.secure_url,
+    type,
+    id,
+  ]);
 
   return rows[0];
 }
