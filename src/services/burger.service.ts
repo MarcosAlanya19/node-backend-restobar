@@ -89,7 +89,6 @@ export async function updateBurger(id: number, burgerData: IBurger, imagePath?: 
     };
   }
 
-  // Si no se proporciona una nueva imagen, mantener la imagen existente
   const updatedImageUrl = imageUrl;
 
   const { rows } = await pool.query(

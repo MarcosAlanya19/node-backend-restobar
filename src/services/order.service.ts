@@ -68,26 +68,20 @@ export const orderService = {
     try {
       await client.query('BEGIN');
 
-      // Verificar si ya hay una tienda asignada
       const existingOrder = await client.query('SELECT assigned_store_id FROM "Order" WHERE id = $1', [orderId]);
       const currentStoreId = existingOrder.rows[0]?.assigned_store_id;
 
-      // Verificar si se está intentando asignar una nueva tienda
       if (newStatus !== 'rejected' && newStatus !== 'delivered') {
-        // Si no es el estado 'rejected' ni 'delivered', se requiere un nuevo ID de tienda
         if (newStoreId === undefined) {
           throw new Error('Se requiere proporcionar un nuevo ID de tienda para cambiar el estado del pedido.');
         }
 
-        // Si ya hay una tienda asignada, lanzar un error si se intenta cambiar
         if (newStoreId !== currentStoreId && currentStoreId !== null) {
           throw new Error('Ya hay una tienda asignada para este pedido.');
         }
 
-        // Actualizar el estado del pedido y asignar la nueva tienda
         await client.query('UPDATE "Order" SET status = $1, assigned_store_id = $2 WHERE id = $3', [newStatus, newStoreId, orderId]);
       } else {
-        // Si es el estado 'rejected' o 'delivered', actualizar solo el estado del pedido
         await client.query('UPDATE "Order" SET status = $1, assigned_store_id = NULL WHERE id = $2', [newStatus, orderId]);
       }
 
