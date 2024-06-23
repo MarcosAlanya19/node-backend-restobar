@@ -9,11 +9,9 @@ export const orderService = {
 
       const { user_id, items } = order;
 
-      // Insertar el pedido y obtener su ID generado automáticamente
       const orderResult = await client.query('INSERT INTO "Order" (user_id) VALUES ($1) RETURNING id', [user_id]);
       const orderId = orderResult.rows[0].id;
 
-      // Insertar los elementos del pedido en la tabla OrderItem
       const orderItemsQuery = `
                 INSERT INTO OrderItem (order_id, item_id, quantity)
                 VALUES ${items.map((_, index) => `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`).join(', ')}
@@ -24,7 +22,7 @@ export const orderService = {
 
       await client.query('COMMIT');
 
-      return orderId; // Devolver el ID del pedido creado
+      return orderId;
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -75,17 +73,22 @@ export const orderService = {
       const currentStoreId = existingOrder.rows[0]?.assigned_store_id;
 
       // Verificar si se está intentando asignar una nueva tienda
-      if (newStoreId !== undefined && newStoreId !== currentStoreId) {
-        // Si ya hay una tienda asignada, lanzar un error
-        if (currentStoreId !== null) {
+      if (newStatus !== 'rejected' && newStatus !== 'delivered') {
+        // Si no es el estado 'rejected' ni 'delivered', se requiere un nuevo ID de tienda
+        if (newStoreId === undefined) {
+          throw new Error('Se requiere proporcionar un nuevo ID de tienda para cambiar el estado del pedido.');
+        }
+
+        // Si ya hay una tienda asignada, lanzar un error si se intenta cambiar
+        if (newStoreId !== currentStoreId && currentStoreId !== null) {
           throw new Error('Ya hay una tienda asignada para este pedido.');
         }
 
         // Actualizar el estado del pedido y asignar la nueva tienda
         await client.query('UPDATE "Order" SET status = $1, assigned_store_id = $2 WHERE id = $3', [newStatus, newStoreId, orderId]);
       } else {
-        // Si no se proporciona un nuevo ID de tienda o el ID de tienda es el mismo, actualizar solo el estado del pedido
-        await client.query('UPDATE "Order" SET status = $1 WHERE id = $2', [newStatus, orderId]);
+        // Si es el estado 'rejected' o 'delivered', actualizar solo el estado del pedido
+        await client.query('UPDATE "Order" SET status = $1, assigned_store_id = NULL WHERE id = $2', [newStatus, orderId]);
       }
 
       await client.query('COMMIT');

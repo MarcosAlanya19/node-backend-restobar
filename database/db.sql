@@ -43,7 +43,7 @@ CREATE TABLE StoreMenuItem (
 );
 
 
-CREATE TYPE OrderStatus AS ENUM ('pending', 'in_process', 'delivered');
+CREATE TYPE OrderStatus AS ENUM ('pending', 'in_process', 'delivered', "rejected");
 CREATE TABLE "Order" (
     ID SERIAL PRIMARY KEY,
     user_id INT,

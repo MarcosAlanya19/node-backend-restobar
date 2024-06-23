@@ -17,7 +17,7 @@ export const getUserById = async (req: Request, res: Response) => {
     if (user) {
       res.json(user);
     } else {
-      res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: 'Usuario no encontrado' });
     }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -26,7 +26,7 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   const userData = req.body;
-  const { user_name, user_password, email } = userData;
+  const { email } = userData;
 
   try {
     const emailExists = await userService.checkEmailExists(email);

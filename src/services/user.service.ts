@@ -13,19 +13,15 @@ export const getUserById = async (id: number) => {
 
 export const checkEmailExists = async (email: string) => {
   const { rows } = await pool.query('SELECT * FROM User_Store WHERE email = $1', [email]);
-  return rows.length > 0; // Retorna true si el correo electrónico ya existe, de lo contrario retorna false
+  return rows.length > 0;
 };
 
 export const createUser = async (userData: User) => {
   const { user_name, user_password, email, role = 'customer', address, phone_number } = userData;
-  const { rows } = await pool.query('INSERT INTO User_Store(user_name, user_password, email, role, address, phone_number) VALUES($1, $2, $3, $4) RETURNING *', [
-    user_name,
-    user_password,
-    email,
-    role,
-    address,
-    phone_number,
-  ]);
+  const { rows } = await pool.query(
+    'INSERT INTO User_Store (user_name, user_password, email, role, address, phone_number) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+    [user_name, user_password, email, role, address, phone_number]
+  );
   return rows[0];
 };
 

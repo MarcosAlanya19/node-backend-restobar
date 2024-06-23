@@ -31,7 +31,7 @@ export const createStore = async (storeData: Store, imagePath: string) => {
   };
 
   const { rows } = await pool.query(
-    'INSERT INTO Store(store_name, public_id, secure_url, address, phone, opening_hour, closing_hour, description) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+    'INSERT INTO Store(store_name, public_id, secure_url, address, phone, opening_hour, closing_hour, description) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
     [store_name, imageUrl.public_id, imageUrl.secure_url, address, phone, opening_hour, closing_hour, description]
   );
 

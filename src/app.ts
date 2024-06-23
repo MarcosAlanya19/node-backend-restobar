@@ -1,16 +1,17 @@
-import express from 'express';
-import { storeRouter } from './routes/store.routes';
-import { userRouter } from './routes/user.routes';
 import cors from 'cors';
+import express from 'express';
 import fileUpload from 'express-fileupload';
 import { pool } from './database/dbConfig';
 import { burgerRouter } from './routes/burger.routes';
-import { orderRouter} from './routes/order.routes';
+import { orderRouter } from './routes/order.routes';
+import { storeRouter } from './routes/store.routes';
+import { userRouter } from './routes/user.routes';
 
 const app = express();
 
 app.use(express.json());
 app.use(cors({ origin: '*' }));
+
 app.use(
   fileUpload({
     useTempFiles: true,

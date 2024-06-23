@@ -19,6 +19,7 @@ export async function uploadImg(filePath: string): Promise<any> {
     throw new Error('Failed to upload image to Cloudinary');
   }
 }
+
 export async function deleteImg(publicId: string): Promise<any> {
   try {
     return await cloudinary.uploader.destroy(publicId);
